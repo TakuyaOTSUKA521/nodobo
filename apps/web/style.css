@@ -122,6 +122,10 @@ h3 { margin: 0; font-size: 12px; letter-spacing: 0.04em; color: var(--label); }
 .segmented--icon, .toolbar .segmented--icon { padding: 0; background: var(--card); border: 1px solid var(--input-border); border-radius: 8px; overflow: hidden; height: 36px; flex-wrap: nowrap; }
 .segmented--icon .seg-btn { width: 38px; padding: 0; border-radius: 0; display: flex; align-items: center; justify-content: center; color: var(--muted); }
 .segmented--icon .seg-btn.selected { color: var(--card); }
+.segmented--sm { padding: 2px; }
+.segmented--sm .seg-btn { padding: 2px 10px; font-size: 11.5px; }
+.segmented[aria-disabled="true"] { opacity: .45; }
+.segmented[aria-disabled="true"] .seg-btn { cursor: not-allowed; }
 /* 期間セグメントは狭い画面で <select> に畳む */
 .period-select { display: none; width: auto; padding: 6px 10px; border: 1px solid var(--input-border); border-radius: 8px; background: var(--card); color: var(--text); }
 @media (max-width: 640px) {
@@ -242,6 +246,8 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
 .rf-search-row { display: flex; align-items: center; gap: 8px; }
 .rf-search-cancel { display: none; background: transparent; border: none; padding: 6px 2px; font-size: 14px; color: var(--accent); cursor: pointer; white-space: nowrap; }
 .rf-amount-row { display: grid; grid-template-columns: minmax(0,1.3fr) minmax(0,1fr); gap: 12px; }
+/* 金額・日付の見出し行。金額の右に [使用額|使用後残高] が載るので、日付側も同じ高さにして入力欄の上端を揃える */
+.rf-field-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 24px; flex-wrap: wrap; }
 .sheet .field input.rf-amount { height: 50px; padding: 4px 12px; font-size: 26px; }
 .rf-date-btn { position: relative; display: flex; align-items: center; height: 100%; min-height: 50px; padding: 0 12px; border: 1px solid var(--input-border); border-radius: 8px; background: var(--input-bg); color: var(--text); font-size: 16px; cursor: pointer; }
 .field .rf-date-btn input[type="date"] { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: none; opacity: 0; cursor: pointer; }

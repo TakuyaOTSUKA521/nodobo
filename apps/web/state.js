@@ -31,6 +31,11 @@ export const ui = {
   sheet: null,
   recordSlot: 'to',
   selectedFromNode: null,
+  // 記録シートの金額欄の意味: 'spend'(使用額) | 'after'(出どころの使用後残高)。
+  // シートを開くたびに 'spend' に戻す。amountPrefill は 'after' で欄に自動で
+  // 入れた値 - 欄がまだこの値のままなら、日付・出どころの変更で入れ直す。
+  amountMode: 'spend',
+  amountPrefill: null,
   // Form values as typed, carried across a re-render (consumed once) - every
   // render() rebuilds the whole DOM, so anything only in an <input> is lost
   // otherwise (captureFormDrafts). Set resetManagerForm right before a

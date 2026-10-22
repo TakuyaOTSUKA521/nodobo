@@ -1,5 +1,6 @@
 import { esc, todayISODate } from '../lib/format.js';
 import { toggleChip, wireToggleChip, isToggleChipOn } from './toggleChip.js';
+import { segmented } from './segmented.js';
 
 // 記録フォームの部品。記録シート(新規)と取引の編集シートで共用する
 // (views/recordSheet.js)。新規は renderNodePicker + renderLineFields、
@@ -119,13 +120,18 @@ function dateLabel(iso) {
   return `${yearPart}${m}月${d}日(${wd})`;
 }
 
-export function renderLineFields({ amount = '', occurredOn = todayISODate(), memo = '', excludeOn = false, excludeDisabled = false }) {
+// `amountMode` ('spend' | 'after') adds the [使用額|使用後残高] segment to the
+// 金額 label row (記録シート only - the edit sheet leaves it null). In 'after'
+// the field holds the 出どころ's balance after this payment instead.
+export function renderLineFields({ amount = '', occurredOn = todayISODate(), memo = '', excludeOn = false, excludeDisabled = false, amountMode = null, amountModeDisabled = false }) {
+  const modeSegment = amountMode === null ? '' : segmented('amount-mode', [['spend', '使用額'], ['after', '使用後残高']], amountMode, { small: true, disabled: amountModeDisabled, ariaLabel: '金額の入力方法' });
   return `
     <div class="rf-amount-row rf-collapsible">
-      <label class="field">金額
-        <input id="amount" class="mono rf-amount" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="${esc(String(amount))}" autocomplete="off">
-      </label>
-      <div class="field">日付
+      <div class="field">
+        <div class="rf-field-head"><label for="amount">金額</label>${modeSegment}</div>
+        <input id="amount" class="mono rf-amount" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="${amountMode === 'after' ? '使用後の残高' : '0'}" value="${esc(String(amount))}" autocomplete="off">
+      </div>
+      <div class="field"><span class="rf-field-head">日付</span>
         <label class="rf-date-btn">
           <span id="occurred-on-label">${esc(dateLabel(occurredOn))}</span>
           <input id="occurred-on" type="date" value="${esc(occurredOn)}" aria-label="日付">
@@ -137,11 +143,12 @@ export function renderLineFields({ amount = '', occurredOn = todayISODate(), mem
   `;
 }
 
-export function wireLineFields() {
+export function wireLineFields({ onDateChange } = {}) {
   const dateInput = document.getElementById('occurred-on');
   dateInput.addEventListener('change', () => {
     if (!dateInput.value) dateInput.value = todayISODate();
     document.getElementById('occurred-on-label').textContent = dateLabel(dateInput.value);
+    onDateChange?.();
   });
   // iOS opens the native picker when the (transparent) input itself is
   // tapped; desktop browsers need showPicker() for a click outside the icon.
@@ -151,9 +158,12 @@ export function wireLineFields() {
   wireToggleChip('exclude-from-flow');
 }
 
+// An empty 金額 reads as NaN (not 0), so a 使用後残高 of 0 can be told apart
+// from nothing typed.
 export function readLineFields() {
+  const amountText = document.getElementById('amount').value.replace(/[,，\s]/g, '');
   return {
-    amount: Number(document.getElementById('amount').value.replace(/[,，\s]/g, '')),
+    amount: amountText === '' ? NaN : Number(amountText),
     occurredOn: document.getElementById('occurred-on').value,
     memo: document.getElementById('memo').value,
     excludeFromFlowTotals: isToggleChipOn('exclude-from-flow'),

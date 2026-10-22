@@ -1,11 +1,14 @@
 import { getLeafNodes, getNodeSuggestions, searchNodes, listNodes } from '../packages/core/nodes.js';
 import { recordLine, reviseLine, deleteLine } from '../packages/core/lines.js';
+import { getBalanceAsOf } from '../packages/core/reports.js';
 import { supabase, memoKey } from '../lib/supabase.js';
 import { esc } from '../lib/format.js';
 import { NODE_TYPE_META } from '../lib/nodes.js';
 import { ui, selectedToNode, setSelectedToNode, invalidateTxCache, render } from '../state.js';
 import { renderNodePicker, wireNodePicker, renderLineFields, wireLineFields, readLineFields, captureLineDraft } from '../components/recordForm.js';
 import { confirmDialog, lineSummary } from '../components/confirmDialog.js';
+import { wireSegmented } from '../components/segmented.js';
+import { isNodeHidden } from '../components/maskToggle.js';
 
 // 記録シート / 取引の編集シート(DESIGN.md §5「入力」)。どの画面の上にも重ねて
 // 開き、閉じると元の画面・スクロール位置に戻る。開いている間の状態は ui.sheet
@@ -30,6 +33,8 @@ export async function openRecordSheet() {
   setSelectedToNode(null);
   ui.recordSlot = 'to';
   ui.recordDraft = null;
+  ui.amountMode = 'spend';
+  ui.amountPrefill = null;
   await prepareSheet();
   refreshSheet({ keepDraft: false });
 }
@@ -108,6 +113,54 @@ function hasFlowEndpoint(ids) {
   return ids.some((id) => id && sheetData.nodeTypeById.get(id) === 'flow');
 }
 
+// 使用後残高 is only offered for an asset 出どころ (a payment out of a wallet
+// or account) - see DESIGN.md §5「入力」.
+function canEnterBalanceAfter() {
+  return Boolean(ui.selectedFromNode) && sheetData.nodeTypeById.get(ui.selectedFromNode.id) === 'asset';
+}
+
+function isBalanceAfterMode() {
+  return ui.sheet?.mode === 'record' && ui.amountMode === 'after' && canEnterBalanceAfter();
+}
+
+// Fills 金額 with the 出どころ's balance as of the chosen date, for the user
+// to overwrite with what's left after paying. Unless `force` (the switch to
+// 使用後残高 itself), a value the user has already edited is left alone. A
+// masked node's balance isn't shown - the field is left empty instead, and
+// handleSubmit still works out the amount the same way.
+let prefillSeq = 0;
+async function prefillBalanceAfter({ force = false } = {}) {
+  const input = document.getElementById('amount');
+  if (!input || !isBalanceAfterMode()) return;
+  if (!force && input.value !== (ui.amountPrefill ?? '')) return;
+  const seq = ++prefillSeq;
+  const typedBefore = input.value;
+  const nodeId = ui.selectedFromNode.id;
+  let value = '';
+  if (!isNodeHidden(nodeId)) {
+    try {
+      value = String(await getBalanceAsOf(supabase, nodeId, document.getElementById('occurred-on').value));
+    } catch (error) {
+      showError(error.message);
+      return;
+    }
+  }
+  const current = document.getElementById('amount');
+  // A newer prefill started, or the user typed while this one was loading.
+  if (seq !== prefillSeq || !current || current.value !== typedBefore) return;
+  current.value = value;
+  ui.amountPrefill = value;
+}
+
+// Back to 使用額. An untouched prefilled balance means nothing as a 使用額,
+// so it's cleared (call before refreshSheet, which carries the field over).
+function leaveBalanceAfter() {
+  const input = document.getElementById('amount');
+  if (input && input.value === (ui.amountPrefill ?? '')) input.value = '';
+  ui.amountMode = 'spend';
+  ui.amountPrefill = null;
+}
+
 function sheetShell({ title, body, foot }) {
   return `
     <div class="sheet-backdrop" data-sheet-close></div>
@@ -143,6 +196,8 @@ function renderRecordSheet(draft) {
         memo: draft?.memo ?? '',
         excludeOn: flow && (draft?.excludeFromFlowTotals ?? false),
         excludeDisabled: !flow,
+        amountMode: isBalanceAfterMode() ? 'after' : 'spend',
+        amountModeDisabled: !canEnterBalanceAfter(),
       })}
     `,
     foot: '<button type="button" id="sheet-submit" class="btn-primary sheet-submit-full">登録</button>',
@@ -192,13 +247,17 @@ function refreshSheet({ keepDraft = true } = {}) {
 // slot is focused. Picking 出どころ auto-advances to 行き先 (the natural next
 // step); picking 行き先 stays put since the amount is next.
 function pickNode(node, { fromSearch }) {
-  if (ui.recordSlot === 'from') {
+  const pickedFrom = ui.recordSlot === 'from';
+  if (pickedFrom) {
     ui.selectedFromNode = { id: node.id, name: node.name };
     ui.recordSlot = 'to';
+    // 資産以外の出どころでは使用後残高を使えないので使用額に戻す。
+    if (!canEnterBalanceAfter() && ui.amountMode === 'after') leaveBalanceAfter();
   } else {
     setSelectedToNode(node);
   }
   refreshSheet();
+  if (pickedFrom) prefillBalanceAfter();
   // A search pick on a phone came from the collapsed search mode: back to the
   // normal layout with the amount ready to type.
   if (fromSearch && ui.recordSlot === 'to' && selectedToNode?.id === node.id) {
@@ -210,9 +269,15 @@ export function wireSheet() {
   if (!ui.sheet) return;
   document.documentElement.classList.add('sheet-open');
   document.querySelectorAll('#sheet-host [data-sheet-close]').forEach((el) => el.addEventListener('click', closeSheet));
-  wireLineFields();
+  wireLineFields({ onDateChange: () => prefillBalanceAfter() });
 
   if (ui.sheet.mode === 'record') {
+    wireSegmented('amount-mode', (value) => {
+      if (value === 'spend') leaveBalanceAfter();
+      else ui.amountMode = 'after';
+      refreshSheet();
+      if (value === 'after') prefillBalanceAfter({ force: true });
+    });
     wireNodePicker({
       searchModeEl: document.getElementById('record-sheet'),
       onSlot: (slot) => {
@@ -248,8 +313,11 @@ function showError(message) {
 
 async function handleSubmit() {
   showError('');
-  const { amount, occurredOn, memo, excludeFromFlowTotals } = readLineFields();
-  if (!(amount > 0)) {
+  const fields = readLineFields();
+  const { occurredOn, memo, excludeFromFlowTotals } = fields;
+  let { amount } = fields;
+  const byBalanceAfter = isBalanceAfterMode();
+  if (!byBalanceAfter && !(amount > 0)) {
     showError('金額を入力してください');
     return;
   }
@@ -266,6 +334,19 @@ async function handleSubmit() {
       if (!selectedToNode) {
         showError('行き先を選択してください');
         return;
+      }
+      // 使用後残高: 金額 = その日付時点の残高 − 入力値。計算した金額は画面に
+      // 出さない(取引一覧などで確認してもらう)。
+      if (byBalanceAfter) {
+        if (!Number.isFinite(amount)) {
+          showError('使用後残高を入力してください');
+          return;
+        }
+        amount = (await getBalanceAsOf(supabase, ui.selectedFromNode.id, occurredOn)) - amount;
+        if (!(amount > 0)) {
+          showError('使用後残高が、その日付時点の残高以上になっています');
+          return;
+        }
       }
       const { data: { user } } = await supabase.auth.getUser();
       await recordLine(supabase, { userId: user.id, occurredOn, fromNode: ui.selectedFromNode.id, toNode: selectedToNode.id, amount, memo, excludeFromFlowTotals }, memoKey);

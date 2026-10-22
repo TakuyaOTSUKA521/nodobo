@@ -100,6 +100,23 @@ export async function getCumulativeForNodes(supabase, nodeIds, { from, to } = {}
     }
 }
 
+// A node's balance as of the end of `date` (every line dated on or before
+// it) - for the 記録シート's 使用後残高 input. v_cumulative only has a row for
+// days with activity, so this is the latest such row; none means 0.
+export async function getBalanceAsOf(supabase, nodeId, date) {
+    const { data, error } = await supabase
+        .from('v_cumulative')
+        .select('cumulative_balance')
+        .eq('node_id', nodeId)
+        .lte('occurred_on', date)
+        .order('occurred_on', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+    if (error) throw error;
+    return Number(data?.cumulative_balance ?? 0);
+}
+
 export async function getNetWorth(supabase) {
     const { data, error } = await supabase.from('v_net_worth').select('*').maybeSingle();
     if (error) throw error;
