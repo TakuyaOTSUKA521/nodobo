@@ -8,6 +8,7 @@ import { periodSegment, wirePeriodSegment } from '../components/periodSegment.js
 import { segmented, wireSegmented } from '../components/segmented.js';
 import { isNodeHidden, maskNodeYen, nodeHideToggleButton, displayEditButton } from '../components/maskToggle.js';
 import { renderNodeTree, treeToggleCell } from '../components/collapsibleTree.js';
+import { ICONS } from '../components/iconButton.js';
 
 const CHART_COLORS = ['#2f7fa8', '#a95742', '#6d7fa3', '#c9974a', '#4d8f8a', '#7d6fa3', '#3c5163', '#5f8f6e'];
 const MASKED = '••••••';
@@ -29,7 +30,7 @@ function ringPath(cx, cy, outerR, innerR, start, end) {
 // still gets two distinct endpoints to draw between. Each slice carries a
 // native <title> (same pattern as the bar charts) so hovering it shows the
 // node's masked amount and its share of `total`.
-function renderDonutChart(entries, total, size = 132) {
+function renderDonutChart(entries, total, size = 132, style = 'flex:0 0 auto;') {
   if (!total) return '';
   const r = size / 2;
   const holeR = r * 0.6;
@@ -47,7 +48,7 @@ function renderDonutChart(entries, total, size = 132) {
     return `<path class="donut-slice" d="${d}" fill="${CHART_COLORS[(e.colorIndex ?? i) % CHART_COLORS.length]}"><title>${tooltip}</title></path>`;
   }).join('');
 
-  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="flex:0 0 auto;">${paths}</svg>`;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="${style}">${paths}</svg>`;
 }
 
 // 多層表示: each entry carries `children` (built by withBreakdown), each child
@@ -95,7 +96,7 @@ function maskedNodeIds(entries) {
 // edge. Children short of their parent leave a 「(内訳なし)」 arc in the
 // parent's color; children over it share the parent's arc by their ratio.
 // No text on the chart itself - only native <title> tooltips, like the donut.
-function renderSunburstChart(entries, total, masked, size = 132) {
+function renderSunburstChart(entries, total, masked, size = 132, style = 'flex:0 0 auto;') {
   if (!total) return '';
   const r = size / 2;
   const holeR = r * 0.3;
@@ -142,7 +143,7 @@ function renderSunburstChart(entries, total, masked, size = 132) {
     angle += sweep;
   });
 
-  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="flex:0 0 auto;">${paths.join('')}</svg>`;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="${style}">${paths.join('')}</svg>`;
 }
 
 // 多層表示の凡例: 子を持つ行に ▸/▾ を出し、押したノードの子だけを開く(最初は
@@ -213,23 +214,15 @@ function withBreakdown(entries, childrenByParent, amountOf) {
   return entries.map((e) => ({ ...e, children: build(e.node).children }));
 }
 
-// One 支出/収入/資産/負債 breakdown card: entries usually carry a positive
-// `amount`, but an asset/liability entry may be <= 0 (e.g. a node that went
-// negative) - see renderAnalysisPage. `total` sums every entry as-is so it
-// always matches v_net_worth; only the donut excludes non-positive entries
-// (a negative slice can't be drawn), keeping them in the legend instead.
-// No aggregation here - `amount` was summed from view rows by the caller.
-function compositionSection(title, entries) {
+// Everything a 支出/収入/資産/負債 card and its zoom modal both derive from
+// the card's entries. Entries usually carry a positive `amount`, but an
+// asset/liability entry may be <= 0 (e.g. a node that went negative) - see
+// renderAnalysisPage. `total` sums every entry as-is so it always matches
+// v_net_worth; only the donut excludes non-positive entries (a negative
+// slice can't be drawn), keeping them in the legend instead. No aggregation
+// here - `amount` was summed from view rows by the caller.
+function cardFigures(entries) {
   const total = entries.reduce((sum, e) => sum + e.amount, 0);
-  if (!entries.length) {
-    return `
-      <section class="card">
-        <h2 style="margin-bottom:4px;">${title}</h2>
-        <p style="font-size:13px;color:var(--faint);margin-top:8px;">記録がありません</p>
-      </section>
-    `;
-  }
-
   // A hidden node's amount would otherwise leak through total − visible
   // entries, so the total masks along with it (same rule the legend rows
   // already follow via maskNodeYen/nodeHideToggleButton). 多層 also shows
@@ -242,23 +235,63 @@ function compositionSection(title, entries) {
   const indexedEntries = entries.map((e, i) => ({ ...e, colorIndex: i }));
   const chartEntries = indexedEntries.filter((e) => e.amount > 0);
   const chartTotal = chartEntries.reduce((sum, e) => sum + e.amount, 0);
+  return { total, multi, masked, totalLabel, indexedEntries, chartEntries, chartTotal };
+}
 
-  if (multi) {
+function cardChart(fig, size, style) {
+  return fig.multi
+    ? renderSunburstChart(fig.chartEntries, fig.chartTotal, fig.masked, size, style)
+    : renderDonutChart(fig.chartEntries, fig.chartTotal, size, style);
+}
+
+// The chart with a small 拡大 button tucked into its bottom-left corner
+// (outside the ring, since a circle leaves the square's corners empty).
+function zoomableChart(fig, key) {
+  const chart = cardChart(fig);
+  if (!chart) return '';
+  return `
+    <div class="chart-zoom-wrap">
+      ${chart}
+      <button type="button" class="chart-zoom-btn" data-analysis-zoom="${key}" aria-label="拡大表示" title="拡大表示">${ICONS.zoom}</button>
+    </div>
+  `;
+}
+
+// 拡大表示: the same chart (1層/多層 and masking follow the card), drawn at a
+// larger size in a modal. Tooltips only, no legend - the card keeps that.
+function zoomModal(title, fig) {
+  return `
+    <div class="modal-backdrop" data-analysis-zoom-close></div>
+    <div role="dialog" aria-modal="true" aria-label="${title}の拡大表示" class="modal-panel">
+      <div class="modal-head">
+        <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;">
+          <h2>${title}</h2>
+          <span class="mono" style="font-size:20px;font-weight:700;">${fig.totalLabel}</span>
+        </div>
+        <button type="button" class="modal-close-btn" data-analysis-zoom-close aria-label="閉じる">×</button>
+      </div>
+      <div class="modal-body">
+        ${cardChart(fig, 440, 'display:block;width:min(100%, 64vh);height:auto;margin:0 auto;')}
+      </div>
+    </div>
+  `;
+}
+
+// One 支出/収入/資産/負債 breakdown card. `key` names it for the zoom modal.
+function compositionSection(title, entries, key) {
+  if (!entries.length) {
     return `
       <section class="card">
-        <div class="card-head">
-          <h2>${title}</h2>
-          <span class="mono" style="font-size:20px;font-weight:700;">${totalLabel}</span>
-        </div>
-        <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-top:10px;">
-          ${renderSunburstChart(chartEntries, chartTotal, masked)}
-          <div style="flex:1;min-width:200px;">${multiLegendRows(indexedEntries, total, masked)}</div>
-        </div>
+        <h2 style="margin-bottom:4px;">${title}</h2>
+        <p style="font-size:13px;color:var(--faint);margin-top:8px;">記録がありません</p>
       </section>
     `;
   }
 
-  const legendRows = indexedEntries.map((e) => {
+  const fig = cardFigures(entries);
+  const { total, totalLabel, indexedEntries, masked } = fig;
+
+  const legendRows = fig.multi ? multiLegendRows(indexedEntries, total, masked) : indexedEntries.map((e) => {
     const pct = total ? (e.amount / total) * 100 : 0;
     return `
       <div class="row">
@@ -278,7 +311,7 @@ function compositionSection(title, entries) {
         <span class="mono" style="font-size:20px;font-weight:700;">${totalLabel}</span>
       </div>
       <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-top:10px;">
-        ${renderDonutChart(chartEntries, chartTotal)}
+        ${zoomableChart(fig, key)}
         <div style="flex:1;min-width:200px;">${legendRows}</div>
       </div>
     </section>
@@ -297,6 +330,8 @@ export async function renderAnalysisPage() {
 
   let controls = '';
   let sections = '';
+  // key -> [title, entries], for the 拡大表示 modal (state.analysisZoom).
+  let cards = {};
 
   if (view === 'flow') {
     const rootFlowNodes = nodes.filter((n) => n.node_type === 'flow' && !n.parent_id && !n.exclude_from_flow_totals);
@@ -327,9 +362,10 @@ export async function renderAnalysisPage() {
 
     controls = periodSegment('analysis-period', period);
     sections = `
-      ${compositionSection('支出構成比', spendEntries)}
-      ${compositionSection('収入構成比', incomeEntries)}
+      ${compositionSection('支出構成比', spendEntries, 'spend')}
+      ${compositionSection('収入構成比', incomeEntries, 'income')}
     `;
+    cards = { spend: ['支出構成比', spendEntries], income: ['収入構成比', incomeEntries] };
   } else {
     const rootAssetNodes = nodes.filter((n) => n.node_type === 'asset' && !n.parent_id);
     const rootLiabilityNodes = nodes.filter((n) => n.node_type === 'liability' && !n.parent_id);
@@ -355,11 +391,13 @@ export async function renderAnalysisPage() {
     }
 
     sections = `
-      ${compositionSection('純資産構成比（資産）', assetEntries)}
-      ${liabilityEntries.length ? compositionSection('純資産構成比（負債）', liabilityEntries) : ''}
+      ${compositionSection('純資産構成比（資産）', assetEntries, 'asset')}
+      ${liabilityEntries.length ? compositionSection('純資産構成比（負債）', liabilityEntries, 'liability') : ''}
     `;
+    cards = { asset: ['純資産構成比（資産）', assetEntries], liability: ['純資産構成比（負債）', liabilityEntries] };
   }
 
+  const zoomCard = cards[state.analysisZoom];
   return `
     <div class="stack" style="gap:14px;">
       <div class="page-head">
@@ -375,6 +413,7 @@ export async function renderAnalysisPage() {
         ${sections}
       </div>
     </div>
+    ${zoomCard ? zoomModal(zoomCard[0], cardFigures(zoomCard[1])) : ''}
   `;
 }
 
@@ -392,6 +431,15 @@ export function wireAnalysisPage() {
     localStorage.setItem('kakeibo:analysisChartDepth', pref.analysisChartDepth);
     render();
   });
+  document.querySelectorAll('[data-analysis-zoom]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      state.analysisZoom = btn.dataset.analysisZoom;
+      render();
+    });
+  });
+  document.querySelectorAll('[data-analysis-zoom-close]').forEach((el) => {
+    el.addEventListener('click', closeZoom);
+  });
   document.querySelectorAll('[data-analysis-tree-toggle-id]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const expandedIds = state.analysisExpandedIds ?? new Set();
@@ -403,3 +451,13 @@ export function wireAnalysisPage() {
     });
   });
 }
+
+// 拡大表示は state に置くので、ページ遷移(go)でも閉じる。
+function closeZoom() {
+  state.analysisZoom = null;
+  render();
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && state.page === 'analysis' && state.analysisZoom) closeZoom();
+});

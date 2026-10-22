@@ -273,6 +273,14 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
 .donut-slice { cursor: default; transition: opacity .1s ease; }
 .donut-slice:hover { opacity: 0.75; }
 .sunburst-seg { stroke: #ffffff; stroke-width: 1; }
+/* 分析カードのドーナツ左下の拡大ボタン(円の外、正方形の角の空きに置く) */
+.chart-zoom-wrap { position: relative; flex: 0 0 auto; line-height: 0; }
+.chart-zoom-btn {
+  position: absolute; left: 0; bottom: 0; width: 26px; height: 26px; padding: 0;
+  display: grid; place-items: center; border: 1px solid var(--input-border); border-radius: 999px;
+  background: var(--card); color: var(--muted); cursor: pointer;
+}
+.chart-zoom-btn:hover { color: var(--accent); border-color: var(--accent); }
 .tx-date { color: var(--muted); font-size: 12.5px; white-space: nowrap; }
 .tx-type-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
 .tree-toggle-btn, .tree-toggle-spacer { width: 16px; flex: 0 0 auto; }
