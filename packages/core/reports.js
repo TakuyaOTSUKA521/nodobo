@@ -78,16 +78,26 @@ export async function getCumulative(supabase, nodeId) {
 // caller only has to sum `daily_delta` per node_id across the returned rows.
 // Sum `flow_daily_delta` instead for 収支 figures - it leaves out lines
 // flagged exclude_from_flow_totals, while `daily_delta` is the plain ledger.
+// Fetched in pages: one row per node per active day easily passes the API's
+// max_rows (supabase/config.toml) once a whole subtree over 全期間 is asked
+// for, and a capped response would silently drop part of the totals.
+const CUMULATIVE_PAGE_SIZE = 1000;
+
 export async function getCumulativeForNodes(supabase, nodeIds, { from, to } = {}) {
     if (nodeIds.length === 0) return [];
 
-    let query = supabase.from('v_cumulative').select('*').in('node_id', nodeIds);
-    if (from) query = query.gte('occurred_on', from);
-    if (to) query = query.lte('occurred_on', to);
+    const rows = [];
+    for (let offset = 0; ; offset += CUMULATIVE_PAGE_SIZE) {
+        let query = supabase.from('v_cumulative').select('*').in('node_id', nodeIds);
+        if (from) query = query.gte('occurred_on', from);
+        if (to) query = query.lte('occurred_on', to);
+        query = query.order('node_id').order('occurred_on').range(offset, offset + CUMULATIVE_PAGE_SIZE - 1);
 
-    const { data, error } = await query;
-    if (error) throw error;
-    return data;
+        const { data, error } = await query;
+        if (error) throw error;
+        rows.push(...data);
+        if (data.length < CUMULATIVE_PAGE_SIZE) return rows;
+    }
 }
 
 export async function getNetWorth(supabase) {

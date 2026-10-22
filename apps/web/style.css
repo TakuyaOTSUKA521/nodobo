@@ -272,6 +272,7 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
 .chart-swatch { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto; }
 .donut-slice { cursor: default; transition: opacity .1s ease; }
 .donut-slice:hover { opacity: 0.75; }
+.sunburst-seg { stroke: #ffffff; stroke-width: 1; }
 .tx-date { color: var(--muted); font-size: 12.5px; white-space: nowrap; }
 .tx-type-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
 .tree-toggle-btn, .tree-toggle-spacer { width: 16px; flex: 0 0 auto; }

@@ -30,26 +30,31 @@ export function toggleNodeExpanded(nodeId) {
 // Caret shown in place of nodeHideToggleButton/nodeArchiveButton's spot when
 // a row has children to fold away; a fixed-width spacer otherwise, so leaf
 // rows in the same tree still line up with their siblings that have one.
-export function treeToggleCell(nodeId, hasChildren) {
+// A tree that keeps its own expanded set (the analysis legend, held in
+// `state` so it doesn't follow the node list's) passes `expanded` and its own
+// `attr`; that attribute isn't wired by index.html, so the view wires it.
+export function treeToggleCell(nodeId, hasChildren, { expanded = isNodeExpanded(nodeId), attr = 'data-tree-toggle-id' } = {}) {
   if (!hasChildren) return '<span class="tree-toggle-spacer"></span>';
-  const expanded = isNodeExpanded(nodeId);
-  return `<button type="button" class="tree-toggle-btn" data-tree-toggle-id="${nodeId}" title="${expanded ? '折りたたむ' : '展開する'}">${expanded ? '▾' : '▸'}</button>`;
+  return `<button type="button" class="tree-toggle-btn" ${attr}="${nodeId}" title="${expanded ? '折りたたむ' : '展開する'}">${expanded ? '▾' : '▸'}</button>`;
 }
+
+const byName = (a, b) => a.name.localeCompare(b.name);
 
 // Renders `list` (a single node_type's nodes) as a collapsible tree: each
 // root and each expanded node's children, recursively. Nodes collapse to
 // just their top level by default (DESIGN.md UX方針) - this is what keeps a
 // node's own row from also being duplicated by every descendant appearing
-// in the same flat section.
-export function renderNodeTree(list, rowRenderer) {
+// in the same flat section. `compare` / `isExpanded` default to name order
+// and the shared expanded set.
+export function renderNodeTree(list, rowRenderer, { compare = byName, isExpanded = isNodeExpanded } = {}) {
   const childrenByParent = buildChildrenMap(list);
   const renderNode = (n, depth) => {
-    const children = (childrenByParent.get(n.id) ?? []).sort((a, b) => a.name.localeCompare(b.name));
-    const expanded = children.length > 0 && isNodeExpanded(n.id);
+    const children = (childrenByParent.get(n.id) ?? []).sort(compare);
+    const expanded = children.length > 0 && isExpanded(n.id);
     const row = rowRenderer(n, depth, children.length > 0);
     const childrenHtml = expanded ? children.map((c) => renderNode(c, depth + 1)).join('') : '';
     return row + childrenHtml;
   };
-  const roots = (childrenByParent.get('root') ?? []).sort((a, b) => a.name.localeCompare(b.name));
+  const roots = (childrenByParent.get('root') ?? []).sort(compare);
   return roots.map((n) => renderNode(n, 0)).join('');
 }

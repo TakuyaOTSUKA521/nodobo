@@ -123,7 +123,7 @@ apps/web/
   直書きされたクラスなので、関数化は §2 の重複排除として別途行う
 - 期間セレクタは当初 `periodSelector.js` に共有部分(`SPEND_PERIODS` /
   `periodRange`)だけを置いていた。2026-10-17 に `periodSegment.js` へ抽出済み(§2)
-- ドーナツ図(composition.js)・スパークライン(nodes.js)は1画面でしか使わない
+- ドーナツ図・多層ドーナツ(composition.js)・スパークライン(nodes.js)は1画面でしか使わない
   ためview側に残した
 
 守るルール:
