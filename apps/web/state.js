@@ -17,8 +17,6 @@ export const pref = {
   netWorthHidden: localStorage.getItem('kakeibo:netWorthHidden') === '1',
   // 分析のドーナツ: 'single'(ルート直下の1層) | 'multi'(全階層の多層)
   analysisChartDepth: localStorage.getItem('kakeibo:analysisChartDepth') || 'single',
-  // 多層表示の凡例: 'top'(最上位のみ) | 'tree'(親ごとに開閉できるツリー)
-  analysisLegendMode: localStorage.getItem('kakeibo:analysisLegendMode') || 'top',
 };
 export let selectedToNode = null;
 export function setSelectedToNode(value) { selectedToNode = value; }

@@ -90,14 +90,15 @@ function maskedNodeIds(entries) {
 
 // Sunburst: depth 1 (the card's root nodes) innermost, each level's arcs
 // inside their parent's angle range, rings splitting holeR..r evenly by the
-// deepest level. A node without drawn children stretches out to the outer
+// deepest level. Same outer radius as the donut but a smaller hole, so each
+// ring stays thick enough to read with several levels. A node without drawn children stretches out to the outer
 // edge. Children short of their parent leave a 「(内訳なし)」 arc in the
 // parent's color; children over it share the parent's arc by their ratio.
 // No text on the chart itself - only native <title> tooltips, like the donut.
 function renderSunburstChart(entries, total, masked, size = 132) {
   if (!total) return '';
   const r = size / 2;
-  const holeR = r * 0.6;
+  const holeR = r * 0.3;
   const cx = r, cy = r;
   const ringWidth = (r - holeR) / Math.max(...entries.map(breakdownDepth));
 
@@ -144,12 +145,10 @@ function renderSunburstChart(entries, total, masked, size = 132) {
   return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="flex:0 0 auto;">${paths.join('')}</svg>`;
 }
 
-// 多層表示の凡例: [最上位のみ] は深さ1の行だけ(開閉トグルなし)、[ツリー] は
-// 子を持つ行に ▸/▾ を出し、押したノードの子だけを開く。開閉は分析画面専用の
-// state.analysisExpandedIds(ページ遷移で全部閉じる。ノード一覧とは連動しない)。
-// 割合は1層の凡例と同じくカード合計に対するもの。
+// 多層表示の凡例: 子を持つ行に ▸/▾ を出し、押したノードの子だけを開く(最初は
+// 最上位だけ)。開閉は分析画面専用の state.analysisExpandedIds(ページ遷移で全部
+// 閉じる。ノード一覧とは連動しない)。割合は1層の凡例と同じくカード合計に対するもの。
 function multiLegendRows(entries, total, masked) {
-  const tree = pref.analysisLegendMode === 'tree';
   const expandedIds = state.analysisExpandedIds ?? new Set();
   // nodeId -> { item, color }: color is null for anything not drawn (a <= 0
   // amount, or under one), matching the 1層 legend's transparent swatch.
@@ -166,7 +165,7 @@ function multiLegendRows(entries, total, masked) {
     const pct = total ? (item.amount / total) * 100 : 0;
     return `
       <div class="row" style="padding-left:${depth * 16}px;">
-        ${tree ? treeToggleCell(n.id, hasChildren, { expanded: expandedIds.has(n.id), attr: 'data-analysis-tree-toggle-id' }) : ''}
+        ${treeToggleCell(n.id, hasChildren, { expanded: expandedIds.has(n.id), attr: 'data-analysis-tree-toggle-id' })}
         <span class="chart-swatch" style="background:${color ?? 'transparent'};${color ? `opacity:${levelOpacity(depth + 1)};` : ''}"></span>
         <span class="${depth ? 'indent-name' : ''}" style="flex:1;min-width:0;">${esc(n.name)}</span>
         <span class="mono" style="min-width:74px;text-align:right;">${masked.has(n.id) ? MASKED : yen(item.amount)}</span>
@@ -176,7 +175,6 @@ function multiLegendRows(entries, total, masked) {
     `;
   };
 
-  if (!tree) return entries.map((e) => row(e.node, 0, false)).join('');
   return renderNodeTree([...byId.values()].map((v) => v.item.node), row, {
     compare: (a, b) => byId.get(b.id).item.amount - byId.get(a.id).item.amount,
     isExpanded: (id) => expandedIds.has(id),
@@ -371,7 +369,6 @@ export async function renderAnalysisPage() {
       <div class="toolbar">
         ${segmented('analysis-view', [['flow', '収支'], ['balance', '資産']], view)}
         ${segmented('analysis-depth', [['single', '1層'], ['multi', '多層']], pref.analysisChartDepth)}
-        ${multi ? segmented('analysis-legend', [['top', '最上位のみ'], ['tree', 'ツリー']], pref.analysisLegendMode, { ariaLabel: '凡例' }) : ''}
         <div class="toolbar-end">${controls}</div>
       </div>
       <div class="grid-fit-320">
@@ -393,11 +390,6 @@ export function wireAnalysisPage() {
   wireSegmented('analysis-depth', (value) => {
     pref.analysisChartDepth = value;
     localStorage.setItem('kakeibo:analysisChartDepth', pref.analysisChartDepth);
-    render();
-  });
-  wireSegmented('analysis-legend', (value) => {
-    pref.analysisLegendMode = value;
-    localStorage.setItem('kakeibo:analysisLegendMode', pref.analysisLegendMode);
     render();
   });
   document.querySelectorAll('[data-analysis-tree-toggle-id]').forEach((btn) => {
