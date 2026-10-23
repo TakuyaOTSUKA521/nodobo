@@ -11,12 +11,12 @@ export function setSession(value) { session = value; }
 export let state = { page: 'login', detailNodeId: null };
 // pref.*: localStorageに永続する、端末ごとの表示設定 (MAINTENANCE.md §1)
 export const pref = {
-  chartMode: localStorage.getItem('kakeibo:chartMode') || 'cumulative',
-  nodeViewMode: localStorage.getItem('kakeibo:nodeViewMode') || 'list',
-  hiddenNodeIds: new Set(JSON.parse(localStorage.getItem('kakeibo:hiddenNodeIds') || '[]')),
-  netWorthHidden: localStorage.getItem('kakeibo:netWorthHidden') === '1',
+  chartMode: localStorage.getItem('nodobo:chartMode') || 'cumulative',
+  nodeViewMode: localStorage.getItem('nodobo:nodeViewMode') || 'list',
+  hiddenNodeIds: new Set(JSON.parse(localStorage.getItem('nodobo:hiddenNodeIds') || '[]')),
+  netWorthHidden: localStorage.getItem('nodobo:netWorthHidden') === '1',
   // 分析のドーナツ: 'single'(ルート直下の1層) | 'multi'(全階層の多層)
-  analysisChartDepth: localStorage.getItem('kakeibo:analysisChartDepth') || 'single',
+  analysisChartDepth: localStorage.getItem('nodobo:analysisChartDepth') || 'single',
 };
 export let selectedToNode = null;
 export function setSelectedToNode(value) { selectedToNode = value; }

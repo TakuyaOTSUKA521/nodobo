@@ -1,4 +1,4 @@
-const CACHE_NAME = 'budget-sandbox-shell-v4';
+const CACHE_NAME = 'nodobo-shell-v5';
 const SHELL_ASSETS = [
   './',
   './index.html',

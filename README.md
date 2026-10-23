@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="image/icon.png" width="96" alt="kakeibo icon" />
+  <img src="image/icon.png" width="96" alt="nodobo icon" />
 </p>
 
-<h1 align="center">kakeibo</h1>
+<h1 align="center">nodobo</h1>
 
 <p align="center">
   「財布もマクドナルドも食費も、全部同じ『ノード』」という発想で作っている個人用の資産管理・家計簿アプリです。<br>
@@ -44,7 +44,7 @@
 ## ディレクトリ構成
 
 ```
-kakeibo/
+nodobo/
 ├── CLAUDE.md               開発方針・禁止事項のサマリ
 ├── DESIGN.md                設計の詳細（スキーマ定義を含む）
 ├── supabase/

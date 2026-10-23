@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Budget Sandbox</title>
+<title>Nodobo</title>
 
 <!-- Local-dev-server fallback (frame-ancestors is ignored in a meta tag - the
      real enforcement, and the rest of these directives, are also sent as an
@@ -19,7 +19,7 @@
 <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Budget Sandbox">
+<meta name="apple-mobile-web-app-title" content="Nodobo">
 <meta name="mobile-web-app-capable" content="yes">
 
 <script type="importmap">
@@ -176,7 +176,7 @@ root.addEventListener('keydown', (e) => {
   if ((e.key === 'Enter' || e.key === ' ') && e.target.matches?.('[data-line-id]') && openLineFromEvent(e)) e.preventDefault();
 });
 // 記録シートの検索結果「+ 新しいノードとして作成」(views は他の views を import しない)。
-document.addEventListener('kakeibo:open-manager', (e) => openManager(null, { name: e.detail?.name ?? '' }));
+document.addEventListener('nodobo:open-manager', (e) => openManager(null, { name: e.detail?.name ?? '' }));
 
 const { data: { session: existingSession } } = await supabase.auth.getSession();
 if (existingSession) {

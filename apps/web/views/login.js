@@ -5,7 +5,7 @@ export function renderLoginPage() {
   return `
     <div style="max-width:380px;margin:6vh auto 0;position:relative;z-index:1;" class="card">
       <h1 style="font-size:20px;">ログイン</h1>
-      <p style="margin:4px 0 22px;font-size:13px;color:var(--muted);line-height:1.6;">Budget Sandbox のアカウントでサインインします。</p>
+      <p style="margin:4px 0 22px;font-size:13px;color:var(--muted);line-height:1.6;">Nodobo のアカウントでサインインします。</p>
       <div class="stack" style="gap:14px;">
         <label class="field">メールアドレス<input id="email" type="email"></label>
         <label class="field">パスワード<input id="password" type="password"></label>

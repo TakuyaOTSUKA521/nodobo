@@ -47,14 +47,14 @@ export function renderSettingsPage() {
 
 export async function wireSettingsPage() {
   const leaves = await getLeafNodes(supabase);
-  const currentDefault = localStorage.getItem('kakeibo:defaultFromNodeId') ?? '';
+  const currentDefault = localStorage.getItem('nodobo:defaultFromNodeId') ?? '';
   const fromSelect = document.getElementById('default-from-select');
   fromSelect.innerHTML = leaves.map((n) => `<option value="${n.id}" ${n.id === currentDefault ? 'selected' : ''}>${esc(n.name)}</option>`).join('');
-  fromSelect.addEventListener('change', (e) => localStorage.setItem('kakeibo:defaultFromNodeId', e.target.value));
+  fromSelect.addEventListener('change', (e) => localStorage.setItem('nodobo:defaultFromNodeId', e.target.value));
 
   wireSegmented('default-chart-mode', (value) => {
     pref.chartMode = value;
-    localStorage.setItem('kakeibo:chartMode', pref.chartMode);
+    localStorage.setItem('nodobo:chartMode', pref.chartMode);
     render();
   });
 
@@ -109,7 +109,7 @@ async function handleExportCsv() {
 
     const header = ['日付', '出どころ', '行き先', '金額', 'メモ'];
     downloadCsv(
-      `kakeibo_${todayISODate()}.csv`,
+      `nodobo_${todayISODate()}.csv`,
       header,
       rows.map((l) => [l.occurred_on, l.from_name, l.to_name, l.amount, l.memo])
     );
@@ -138,7 +138,7 @@ async function handleExportNodesCsv() {
 
     const header = ['分類', '階層パス', 'ノード名', '親ノード', '収支から除外', 'アーカイブ済み'];
     downloadCsv(
-      `kakeibo_nodes_${todayISODate()}.csv`,
+      `nodobo_nodes_${todayISODate()}.csv`,
       header,
       sorted.map((n) => [
         NODE_TYPE_META[n.node_type].label,

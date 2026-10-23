@@ -37,7 +37,7 @@ export function renderHeader() {
     <header>
       <div class="header-inner">
         <button class="logo-btn" data-nav="dashboard">
-          <span class="logo-text">Budget Sandbox</span>
+          <span class="logo-text">Nodobo</span>
         </button>
         <nav class="nav-tabs">${tabsHtml}</nav>
         <div class="header-actions">

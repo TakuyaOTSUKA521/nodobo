@@ -1,4 +1,4 @@
-# kakeibo — 開発ガイド
+# nodobo — 開発ガイド
 
 個人用の資産管理・家計簿アプリ。Supabase + Node.js CLI + 静的Webページ。
 
@@ -44,7 +44,7 @@
 ## ディレクトリ構成
 
 ```
-kakeibo/
+nodobo/
 ├── CLAUDE.md
 ├── DESIGN.md                  設計の詳細(スキーマ定義を含む)
 ├── supabase/

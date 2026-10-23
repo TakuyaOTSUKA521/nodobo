@@ -75,7 +75,7 @@ export function wireDetailPage() {
 
   wireSegmented('chart-mode', (value) => {
     pref.chartMode = value;
-    localStorage.setItem('kakeibo:chartMode', pref.chartMode);
+    localStorage.setItem('nodobo:chartMode', pref.chartMode);
     render();
   });
 }

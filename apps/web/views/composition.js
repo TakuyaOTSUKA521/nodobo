@@ -428,7 +428,7 @@ export function wireAnalysisPage() {
   });
   wireSegmented('analysis-depth', (value) => {
     pref.analysisChartDepth = value;
-    localStorage.setItem('kakeibo:analysisChartDepth', pref.analysisChartDepth);
+    localStorage.setItem('nodobo:analysisChartDepth', pref.analysisChartDepth);
     render();
   });
   document.querySelectorAll('[data-analysis-zoom]').forEach((btn) => {

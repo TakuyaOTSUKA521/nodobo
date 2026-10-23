@@ -45,7 +45,7 @@ export function toggleNodeHidden(nodeId) {
 export function setNodeHidden(nodeId, hidden) {
   if (hidden) pref.hiddenNodeIds.add(nodeId);
   else pref.hiddenNodeIds.delete(nodeId);
-  localStorage.setItem('kakeibo:hiddenNodeIds', JSON.stringify([...pref.hiddenNodeIds]));
+  localStorage.setItem('nodobo:hiddenNodeIds', JSON.stringify([...pref.hiddenNodeIds]));
 }
 
 export function netWorthToggleButton() {
@@ -55,6 +55,6 @@ export function netWorthToggleButton() {
 
 export function toggleNetWorthHidden() {
   pref.netWorthHidden = !pref.netWorthHidden;
-  localStorage.setItem('kakeibo:netWorthHidden', pref.netWorthHidden ? '1' : '0');
+  localStorage.setItem('nodobo:netWorthHidden', pref.netWorthHidden ? '1' : '0');
   render();
 }

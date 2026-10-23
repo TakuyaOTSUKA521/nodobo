@@ -1,4 +1,4 @@
-# kakeibo — 設計書
+# nodobo — 設計書
 
 ## 1. 思想
 
@@ -540,8 +540,10 @@ supabase link --project-ref sicucuywqqcapbogfkoy
 ```
 
 インフラは既存のものをそのまま使う(Supabase / GitHub / Vercel は連携済み)。
-プロジェクト名 `budget-sandbox` は変更しない。Vercel のプロジェクト名を変えると
-デプロイ URL が変わり、ホーム画面に追加したリンクが切れるため。
+アプリ名は `nodobo` に統一した(2026-10-23。旧称 kakeibo / budget-sandbox が混在していたため)。
+GitHub リポジトリ名・Vercel プロジェクト名の変更は手動で別途行う。
+Vercel のプロジェクト名を変えるとデプロイ URL が変わり、ホーム画面に追加したリンクが切れるので、
+変更後はホーム画面のリンクを追加し直す。
 
 ### 手順
 

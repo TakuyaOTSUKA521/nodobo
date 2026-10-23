@@ -92,7 +92,7 @@ export async function prepareSheet() {
   if (!ui.selectedFromNode) {
     // First open this session: fall back to 設定's 既定の出どころ, else just
     // the first candidate. Once picked, it persists across opens/submits.
-    const storedDefaultId = localStorage.getItem('kakeibo:defaultFromNodeId');
+    const storedDefaultId = localStorage.getItem('nodobo:defaultFromNodeId');
     const fallback = fromCandidates.find((n) => n.id === storedDefaultId) ?? fromCandidates[0];
     ui.selectedFromNode = fallback ? { id: fallback.id, name: fallback.name } : null;
   }
@@ -288,7 +288,7 @@ export function wireSheet() {
       onCreate: (query) => {
         // ノード管理を名前入りで開く。シートは ui.sheet に残るので、閉じると戻る。
         ui.recordDraft = captureLineDraft();
-        document.dispatchEvent(new CustomEvent('kakeibo:open-manager', { detail: { name: query } }));
+        document.dispatchEvent(new CustomEvent('nodobo:open-manager', { detail: { name: query } }));
       },
       search: async (query) => {
         const results = await searchNodes(supabase, query);

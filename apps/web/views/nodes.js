@@ -16,7 +16,7 @@ import { confirmDialog } from '../components/confirmDialog.js';
 // Card view only: 'all' shows every node (leaf and intermediate/group), 'leaf'
 // hides intermediate nodes so only the actual recording targets remain.
 // Shown as the 「最下層のみ」 toggle chip (on = 'leaf').
-let nodeCardFilter = localStorage.getItem('kakeibo:nodeCardFilter') || 'all';
+let nodeCardFilter = localStorage.getItem('nodobo:nodeCardFilter') || 'all';
 let showArchivedNodes = false;
 
 // Archiving (is_archived) removes a node from the node list entirely - unlike
@@ -270,7 +270,7 @@ export async function renderNodesPage() {
 export function wireNodesPage() {
   wireSegmented('node-view-mode', (value) => {
     pref.nodeViewMode = value;
-    localStorage.setItem('kakeibo:nodeViewMode', pref.nodeViewMode);
+    localStorage.setItem('nodobo:nodeViewMode', pref.nodeViewMode);
     render();
   });
 
@@ -281,7 +281,7 @@ export function wireNodesPage() {
 
   wireToggleChip('filter-leaf-chip', (on) => {
     nodeCardFilter = on ? 'leaf' : 'all';
-    localStorage.setItem('kakeibo:nodeCardFilter', nodeCardFilter);
+    localStorage.setItem('nodobo:nodeCardFilter', nodeCardFilter);
     render();
   });
 

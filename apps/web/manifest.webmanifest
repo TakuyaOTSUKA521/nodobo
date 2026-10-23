@@ -1,6 +1,6 @@
 {
-  "name": "Budget Sandbox",
-  "short_name": "Budget Sandbox",
+  "name": "Nodobo",
+  "short_name": "Nodobo",
   "description": "ノードと取引で家計を管理するシンプルな家計簿",
   "start_url": ".",
   "scope": ".",
