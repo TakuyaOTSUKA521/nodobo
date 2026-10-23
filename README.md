@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="image/icon.png" width="96" alt="nodobo icon" />
+  <img src="image/nodobo-ios-512.png" width="96" alt="nodobo icon" />
 </p>
 
 <h1 align="center">nodobo</h1>

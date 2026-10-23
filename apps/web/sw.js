@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nodobo-shell-v5';
+const CACHE_NAME = 'nodobo-shell-v6';
 const SHELL_ASSETS = [
   './',
   './index.html',
@@ -35,7 +35,9 @@ const SHELL_ASSETS = [
   './packages/core/reports.js',
   './packages/core/crypto.js',
   './icons/icon-192.png',
-  './icons/icon-512.png'
+  './icons/icon-512.png',
+  './icons/icon-192-maskable.png',
+  './icons/icon-512-maskable.png'
 ];
 
 self.addEventListener('install', (event) => {
